@@ -16,71 +16,75 @@ const { initializeSocket } = require('./socket/socketHandler');
 
 const app = express();
 const server = http.createServer(app);
+
+// Socket setup
 const io = socketIo(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "*", // allow all for now (fix later for production)
     methods: ["GET", "POST"]
   }
 });
 
-// Middleware
+// Initialize socket
+initializeSocket(io);
+
+// ================= MIDDLEWARE =================
 app.use(helmet());
+
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: true,
   credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Session
+// ================= SESSION =================
 app.use(session({
-  secret: process.env.SESSION_SECRET,
+  secret: process.env.SESSION_SECRET || "secret",
   resave: false,
   saveUninitialized: true,
   cookie: { secure: false }
 }));
 
-// Rate limiting
+// ================= RATE LIMIT =================
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 100,
-  message: 'Too many requests, please try again later.'
 });
 app.use('/api/', limiter);
 
-// Static files
+// ================= STATIC =================
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static('../client'));
+app.use(express.static(path.join(__dirname, '../client')));
 
-// Routes
+// ================= ROUTES =================
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Initialize default data
+// ================= INIT DATA =================
 const { initializeDefaultData } = require('./utils/initData');
 initializeDefaultData();
 
-// Socket initialization
-
-// MongoDB
+// ================= DATABASE =================
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB error:', err));
 
-// Error handling
+// ================= ERROR HANDLER =================
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Server error' });
 });
 
-// Serve frontend
-app.get('/*', (req, res) => {
-  res.send("Route not found");
+// ================= FALLBACK (FIXED) =================
+app.use((req, res) => {
+  res.status(404).send("Route not found");
 });
 
+// ================= SERVER =================
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
 
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});

@@ -1,8 +1,9 @@
 // ZenSpace Real Backend Integration
 // Keeps all existing UI/behavior, replaces localStorage with APIs/Socket.io
 
-const API_BASE = '/api';
-const SOCKET_SERVER = location.origin.replace(/^http/, 'ws');
+const BACKEND_URL = 'https://zenspace.up.railway.app';
+const API_BASE = BACKEND_URL + '/api';
+const SOCKET_SERVER = BACKEND_URL.replace(/^http/, 'ws');
 
 let socket = null;
 let isConnected = false;
@@ -50,13 +51,13 @@ function initSocket() {
     showToast('Connected to server!', 'success');
   });
 
-  socket.on('new_message', (message) => {
+socket.on('receiveMessage', (message) => {
     APP_STATE.messages.push(message);
     renderMessages();
     scrollToBottom();
   });
 
-  socket.on('message_sent', (message) => {
+  socket.on('messageSent', (message) => {
     // Update local optimistic message
     const localMsg = APP_STATE.messages.find(m => !m._id);
     if (localMsg) Object.assign(localMsg, message);
@@ -175,8 +176,8 @@ async function sendMessage() {
       APP_STATE.messages.pop(); // Remove optimistic
 
     } else {
-      // Text message via socket
-      socket.emit('send_message', data);
+// Text message via socket
+      socket.emit('sendMessage', data);
     }
 
     document.getElementById('messageInput').value = '';

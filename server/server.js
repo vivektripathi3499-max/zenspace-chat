@@ -61,6 +61,7 @@ app.use(express.static(path.join(__dirname, '../client')));
 // ================= ROUTES =================
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/messages', require('./routes/messages'));
 
 // ================= INIT DATA =================
 const { initializeDefaultData } = require('./utils/initData');

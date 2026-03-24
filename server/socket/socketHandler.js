@@ -52,39 +52,39 @@ function initializeSocket(io) {
     });
 
     // Handle message
-    socket.on('send_message', async (data) => {
-      try {
-        // Check messaging disabled
-        const messagingDisabled = await Setting.findOne({ key: 'messaging_disabled' });
-        if (messagingDisabled?.value) {
-          socket.emit('error', { message: 'Messaging disabled by admin' });
-          return;
-        }
+socket.on('sendMessage', async (data) => {
+  try {
+    // Check messaging disabled
+    const messagingDisabled = await Setting.findOne({ key: 'messaging_disabled' });
+    if (messagingDisabled?.value) {
+      socket.emit('error', { message: 'Messaging disabled by admin' });
+      return;
+    }
 
-        // Content filtering
-        if (contentFilter(data.content)) {
-          socket.emit('error', { message: 'Content contains blocked information' });
-          return;
-        }
+    // Content filtering
+    if (contentFilter(data.content)) {
+      socket.emit('error', { message: 'Content contains blocked information' });
+      return;
+    }
 
-        // Save message
-        const message = new Message({
-          content: data.content,
-          userId: data.userId,
-          userName: data.userName,
-          type: data.type || 'text',
-          roomId: 'default'
-        });
-        await message.save();
-
-        // Broadcast to room
-        socket.to('default').emit('new_message', message);
-        socket.emit('message_sent', message);
-
-      } catch (err) {
-        socket.emit('error', { message: err.message });
-      }
+    // Save message
+    const message = new Message({
+      content: data.content,
+      userId: data.userId,
+      userName: data.userName,
+      type: data.type || 'text',
+      roomId: 'default'
     });
+    await message.save();
+
+    // Broadcast to room
+    socket.to('default').emit('receiveMessage', message);
+    socket.emit('messageSent', message);
+
+  } catch (err) {
+    socket.emit('error', { message: err.message });
+  }
+});
 
     // Typing indicator
     socket.on('typing', () => {

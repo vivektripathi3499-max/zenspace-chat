@@ -62,7 +62,6 @@ const { initializeDefaultData } = require('./utils/initData');
 initializeDefaultData();
 
 // Socket initialization
-initializeSocket(io);
 
 // MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -76,8 +75,8 @@ app.use((err, req, res, next) => {
 });
 
 // Serve frontend
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/index.html'));
+app.get('/*', (req, res) => {
+  res.send("Route not found");
 });
 
 const PORT = process.env.PORT || 3000;

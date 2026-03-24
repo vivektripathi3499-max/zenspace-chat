@@ -50,7 +50,7 @@ router.post('/join', async (req, res) => {
 });
 
 // Get initial data (messages, users, online count)
-router.get('/init/:roomId?', async (req, res) => {
+router.get('/init/:roomId', async (req, res) => {
   try {
     const messages = await Message.find({ roomId: 'default' })
       .sort({ createdAt: -1 })

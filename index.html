@@ -103,68 +103,87 @@
 
   <!-- [ALL ORIGINAL CHAT SCREEN + MODALS - FULLY PRESERVED] -->
 
-  <script>
-    const BACKEND_URL = "https://zenspace.up.railway.app";
-    const socket = io(BACKEND_URL);
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
-    // FULLY INTEGRATED - NO LOCALSTORAGE
-    let messages = [];
-    let isTyping = false;
+<script>
+const BACKEND_URL = "https://zenspace.up.railway.app"; // ✅ your real URL
+const socket = io(BACKEND_URL);
 
-    socket.on('connect', () => console.log('✅ Connected to backend'));
-    
-    socket.on('receiveMessage', (data) => {
-      messages.push(data);
-      renderMessages();
+let messages = [];
+
+// ✅ Load messages from backend
+async function loadMessages() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/messages`);
+    messages = await res.json();
+    renderMessages();
+  } catch (err) {
+    console.error("Load error:", err);
+  }
+}
+
+// ✅ Send message
+async function sendMessage() {
+  const input = document.getElementById('messageInput');
+  const content = input.value.trim();
+
+  if (!content) return;
+
+  try {
+    await fetch(`${BACKEND_URL}/api/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        content,
+        userId: "me",
+        userName: "You"
+      })
     });
 
-    async function sendMessage() {
-      const input = document.getElementById('messageInput');
-      const content = input.value.trim();
-      if (!content) return;
+    input.value = "";
+  } catch (err) {
+    console.error("Send error:", err);
+  }
+}
 
-      // Optimistic UI
-      const tempMsg = { content, userId: 'me', temp: true };
-      messages.push(tempMsg);
-      renderMessages();
-      
-      // Backend API
-      await fetch(`${BACKEND_URL}/api/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, userId: 'me', userName: 'You' })
-      });
-      
-      // Socket emit
-      socket.emit('sendMessage', { content, userId: 'me', userName: 'You' });
-      
-      input.value = '';
+// ✅ Receive real-time messages
+socket.on("receiveMessage", (msg) => {
+  messages.push(msg);
+  renderMessages();
+});
+
+// ✅ Render messages
+function renderMessages() {
+  const container = document.getElementById("messagesContainer");
+
+  container.innerHTML = messages.map(msg => `
+    <div class="flex ${msg.userId === 'me' ? 'justify-end' : 'justify-start'}">
+      <div class="message-bubble ${msg.userId === 'me' ? 'message-own' : 'message-other'}">
+        <div class="text-sm">${msg.content}</div>
+        <div class="text-xs mt-1">${msg.userName}</div>
+      </div>
+    </div>
+  `).join("");
+
+  container.scrollTop = container.scrollHeight;
+}
+
+// ✅ Init
+document.addEventListener("DOMContentLoaded", () => {
+  loadMessages();
+
+  document.getElementById("sendBtn").addEventListener("click", sendMessage);
+
+  document.getElementById("messageInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage();
     }
-
-    async function loadMessages() {
-      const response = await fetch(`${BACKEND_URL}/api/messages`);
-      messages = await response.json();
-      renderMessages();
-    }
-
-    function renderMessages() {
-      const container = document.getElementById('messagesContainer');
-      container.innerHTML = messages.map(msg => `
-        <div class="flex ${msg.userId === 'me' ? 'justify-end' : 'justify-start'}">
-          <div class="message-bubble ${msg.userId === 'me' ? 'message-own' : 'message-other'}">
-            <div class="text-sm">${msg.content}</div>
-            <div class="text-xs mt-1">${msg.userName}</div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // ALL ORIGINAL UI FUNCTIONS PRESERVED
-    document.addEventListener('DOMContentLoaded', () => {
-      loadMessages();
-      // ALL ORIGINAL EVENT LISTENERS + INITIALIZATION
-    });
-  </script>
+  });
+});
+</script>
 </body>
 </html>
 
